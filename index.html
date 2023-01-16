@@ -1,123 +1,90 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="content-security-policy" content="
-	base-uri 'self';
-	default-src 'none';
-	script-src 'self' https://unpkg.com;
-	style-src 'self' 'sha256-s7UPtBgvov5WNF9C1DlTZDpqwLgEmfiWha5a5p/Zn7E=';
-	connect-src 'self';
-	font-src 'self' data:;
-	img-src 'self' blob:;
-	frame-src 'self';
-	form-action 'self';
-">
-<meta name="viewport" content="initial-scale=1.0, user-scalable=no, minimal-ui">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="format-detection" content="telephone=no">
+================================================================================
+Used tool :
+https://github.com/davidje13/SequenceDiagram
 
-<title>Sequence Diagram</title>
-<link rel="icon" href="web/resources/favicon.png">
-<link rel="apple-touch-icon" href="web/resources/apple-touch-icon.png">
-<link rel="stylesheet" href="web/styles/editor.css">
+================================================================================
+theme basic
+title Unlocking
 
-<meta
-	name="cdn-split"
-	content="https://unpkg.com/split.js@1.3.5/split.min.js"
-	data-integrity="sha256-vBu0/2gpeLlfmY2yFkr8eHTMuYKBw2M+/Id/qZx27F4="
->
+begin Lock, Smartphone, PCAV
 
-<!-- DEV
-<meta
-	name="cdn-cm/lib/codemirror"
-	content="node_modules/codemirror/lib/codemirror.js"
->
+note over Smartphone,PCAV:"Asynchronous action"
+Smartphone->PCAV:Authentication (with smartphone ECC key) + send log packet
+PCAV->Smartphone:"Command packets ciphered with Lock AES key and signed with AC ECC priv key\nListe of Lock UUID accessible for the Phone"
 
-<link rel="stylesheet" href="node_modules/codemirror/lib/codemirror.css">
+note over Lock,PCAV:"Opening lock"
+Smartphone-> +Lock: Smartphone certificat (CN=UUID of phone)
+note left of Lock: "Verify phone certificat signature\nwith AC certificate\nGenerate Random number RN1"
+text left "RN1 used to prevent replay (unique session)"
+-Lock-> Smartphone:RN1 (same lenght as Lock UUID) ciphered with Phone public key
+note right of Smartphone:"decipher RN1 and store RN1"
+Smartphone-> +Lock: [datetime].sign(phone ECC priv key)
+note left of Lock:"Verify signature \nStore datetime (to prevent replay)"
+text left "Datetime becomes lock's clock reference"
 
-<meta
-	name="cdn-cm/addon/hint/show-hint"
-	content="node_modules/codemirror/addon/hint/show-hint.js"
->
+note right of Smartphone:"mesure response time between\nsended and receved\npackets to prevent proxy attack"
+-Lock-> Smartphone:(Lock UUID) XOR (RN1)
+note right of Smartphone:"Retreive Lock UUID = ((Lock UUID) XOR (RN1)) XOR RN1\nControle Lock UUID with white liste"
 
-<link rel="stylesheet"
-	href="node_modules/codemirror/addon/hint/show-hint.css"
->
+if "response time > fixed value"
+Smartphone->*User: "If response time > fixed value => ask for user interaction"
+!User->Smartphone: "Validate Opération"
+else
+note right of Smartphone: "Nothing to do"
+end
+note right of PCAV :"Anti-Proxy Protection"
 
-<meta
-	name="cdn-cm/addon/edit/trailingspace"
-	content="node_modules/codemirror/addon/edit/trailingspace.js"
->
+Smartphone-> +Lock: "Send command packets for identified Lock UUID"
+note left of Lock: Unlock if OK
+-Lock-> Smartphone:send log packets ciphered with AES lock key
 
-<meta
-	name="cdn-cm/addon/comment/comment"
-	content="node_modules/codemirror/addon/comment/comment.js"
->
-
-<script src="node_modules/requirejs/require.js"></script>
-<link rel="stylesheet" href="web/styles/codemirror-override.css">
-<script src="web/scripts/editor.mjs" type="module"></script>
-/DEV -->
-
-<!-- LIVE -->
-<link rel="stylesheet" href="web/lib/codemirror.css">
-<meta name="cdn-cm/lib/codemirror" content="web/lib/codemirror.js">
-<meta name="cdn-cm/addon/hint/show-hint" content="web/lib/show-hint.js">
-<meta name="cdn-cm/addon/edit/trailingspace" content="web/lib/trailingspace.js">
-<meta name="cdn-cm/addon/comment/comment" content="web/lib/comment.js">
-
-<script src="lib/sequence-diagram-web.min.js"></script>
-<script src="web/lib/require.js"></script>
-<link rel="stylesheet" href="web/styles/codemirror-override.css">
-<script src="web/lib/editor.min.js"></script>
-<!-- /LIVE -->
-
-</head>
-<body>
-
-<div id="loader">
-<h1>Sequence Diagram Online Editor</h1>
-<p class="loadmsg">Loading&hellip;</p>
-<nav>
-<a href="#" data-touch="Files">My Diagrams</a>
-<a href="library.htm" target="_blank" rel="noopener" data-touch="API">Library</a>
-<a href="https://github.com/davidje13/SequenceDiagram" target="_blank" rel="noopener" data-touch="">GitHub</a>
-</nav>
-</div>
-
-<noscript>
-<link rel="stylesheet" href="web/styles/noscript.css">
-<main>
-<section class="banner">
-Enable JavaScript for live rendering, templates, PNG export, and local file saving.
-<nav><a href="library.htm" target="_blank" rel="noopener">Library</a><a href="https://github.com/davidje13/SequenceDiagram" target="_blank" rel="noopener">GitHub</a></nav>
-</section>
-<form target="preview" action="preview" method="GET">
-<textarea name="c">
-title Labyrinth
-
-Bowie -> Goblin: You remind me of the babe
-Goblin -> Bowie: What babe?
-Bowie -> Goblin: The babe with the power
-Goblin -> Bowie: What power?
-note right of Bowie, Goblin: Most people get muddled here!
-Bowie -> Goblin: "The power of voodoo"
-Goblin -> Bowie: "Who-do?"
-Bowie -> Goblin: You do!
-Goblin -> Bowie: Do what?
-Bowie -> Goblin: Remind me of the babe!
-
-Bowie -> Audience: Sings
+note over Smartphone,PCAV:Asynchronous action
+Smartphone->PCAV:Authentication (with smartphone ECC key) + Send log packet
+PCAV->Smartphone:Command packets ciphered with Lock AES key and signed with AC ECC priv key
 
 terminators box
-</textarea>
-<button type="submit">Update</button>
-</form>
-<iframe name="preview" src="web/resources/preview.htm"></iframe>
-</main>
-</noscript>
+================================================================================
+theme basic
+title Phone enrolment
 
-</body>
-</html>
+
+Smartphone->PCAV:Authentication (user/password)
+PCAV-> +Smartphone: "OK"
+note right of Smartphone: "Generate UUID
+    Generate ECC key pair
+    Generate Certificate Signing Request (CSR)"
+
+-Smartphone->PCAV: "Send CSR (CN=UUID of phone)"
+note right of PCAV :"Sign phone certificate with AC
+    Store phone certificate"
+
+PCAV->Smartphone:Phone certificate 
+text right: "Short lifetime : max 1 week"
+note left of Smartphone: "Store phone certificate"
+
+
+terminators box
+
+================================================================================
+theme basic
+title Lock enrolment
+
+begin Lock, PC+Fob, PCAV
+
+PC+Fob->PCAV:Authentication (certificate + user/passwd)
+PCAV->PC+Fob: AC Certificate (Organization's Certificate)
+PC+Fob->Lock: Init + get UUID 
+Lock->PC+Fob: UUID
+PC+Fob-> +Lock: AC Certificate 
+note right of Lock: "Store AC certificate 
+    Generate AES key
+    Cipher AES key with AC ECC pub key (to upload the key safely)"
+    text left "AC used to authentify smartphones"
+-Lock->PC+Fob: AES key ciphered
+PC+Fob->PCAV: Lock UUID + AES key ciphered
+
+
+
+terminators box
+
+================================================================================
